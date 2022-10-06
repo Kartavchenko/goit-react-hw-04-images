@@ -14,36 +14,8 @@ export const App = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isShow, setIsShow] = useState(false);
-  const [error, setError] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalContent, setModalContent] = useState('');
-
-  useEffect(() => {
-    setIsLoading(true);
-
-    return () => {
-      fetchPhoto();
-      setIsLoading(false);
-    };
-  }, []);
-
-  const fetchPhoto = async () => {
-    try {
-      setIsLoading(true);
-      const data = await serviceApi(searchQuery, page);
-      setHits([...hits, ...data]);
-      setPage(prevPage => prevPage + 1);
-      if (data.length >= 12) {
-        setIsShow(true);
-      } else {
-        setIsShow(false);
-      }
-    } catch (error) {
-      setError(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleOnSearch = query => {
     if (query !== searchQuery) {
@@ -56,16 +28,40 @@ export const App = () => {
   const closeModal = e => {
     setModalOpen(!modalOpen);
     setModalContent('');
-    // this.setState(({ modalOpen }) => ({
-    //   modalOpen: !modalOpen,
-    //   modalContent: '',
-    // }));
   };
 
   const handleModal = content => {
     setModalOpen(true);
     setModalContent(content);
   };
+
+  const getPage = () => {
+    setPage(page + 1);
+  };
+
+  useEffect(() => {
+    const fetchPhoto = async () => {
+      setIsLoading(true);
+      try {
+        if (searchQuery !== '') {
+          const data = await serviceApi(searchQuery, page);
+          setHits(prev => [...prev, ...data]);
+          if (data.length >= 12) {
+            setIsShow(true);
+          } else {
+            setIsShow(false);
+          }
+        }
+      } catch ({ error }) {
+        console.log(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPhoto();
+  }, [searchQuery, page]);
+
   return (
     <div>
       {modalOpen && (
@@ -75,97 +71,10 @@ export const App = () => {
       )}
       <Searchbar handleOnSearch={handleOnSearch} />
       <ImageGallery objectHits={hits} handleModal={handleModal} />
-      {isLoading ? <Loader /> : isShow && <LoadMore onLoadMore={fetchPhoto} />}
+      {isLoading ? <Loader /> : isShow && <LoadMore onLoadMore={getPage} />}
     </div>
   );
 };
-
-// export class App extends Component {
-//   state = {
-//     hits: [],
-// searchQuery: '',
-// page: 1,
-// isLoading: false,
-// isShow: false,
-// error: null,
-// modalOpen: false,
-// modalContent: '',
-//   };
-
-//   componentDidUpdate(prevProps, prevState) {
-//     const { searchQuery } = this.state;
-//     if (prevState.searchQuery !== searchQuery) {
-//       this.fetchPhoto();
-//       this.setState({ isLoading: true });
-//     }
-//   }
-
-//   fetchPhoto = async () => {
-//     const { page, hits, searchQuery } = this.state;
-//     try {
-//       this.setState({
-//         isLoading: true,
-//       });
-//       const data = await serviceApi(searchQuery, page);
-//       this.setState(({ page }) => {
-//         return {
-//           hits: [...hits, ...data],
-//           page: page + 1,
-//         };
-//       });
-//       if (data.length >= 12) {
-//         this.setState({ isShow: true });
-//       } else {
-//         this.setState({ isShow: false });
-//       }
-//     } catch (error) {
-//       this.setState({ error });
-//     } finally {
-//       this.setState({ isLoading: false });
-//     }
-//   };
-
-//   handleOnSearch = searchQuery => {
-//     if (searchQuery !== this.state.searchQuery) {
-//       this.setState({ searchQuery, page: 1, hits: [] });
-//     }
-//   };
-
-//   closeModal = e => {
-//     this.setState(({ modalOpen }) => ({
-//       modalOpen: !modalOpen,
-//       modalContent: '',
-//     }));
-//   };
-
-//   handleModal = modalContent => {
-//     this.setState({
-//       modalOpen: true,
-//       modalContent,
-//     });
-//   };
-
-//   render() {
-//     const { hits, modalOpen, modalContent, isLoading, isShow } = this.state;
-//     const { closeModal, handleOnSearch, handleModal, fetchPhoto } = this;
-//     return (
-//       <div>
-//         {modalOpen && (
-//           <Modal closeModal={closeModal}>
-//             <img src={modalContent} alt="" />
-//           </Modal>
-//         )}
-//         <Searchbar handleOnSearch={handleOnSearch} />
-//         <ImageGallery objectHits={hits} handleModal={handleModal} />
-//         {isLoading ? (
-//           <Loader />
-//         ) : (
-//           isShow && <LoadMore onLoadMore={fetchPhoto} />
-//         )}
-//       </div>
-//     );
-//   }
-// }
 
 App.propTypes = {
   fetchPhoto: PropTypes.func,
